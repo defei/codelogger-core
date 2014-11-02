@@ -2,8 +2,8 @@ package org.codelogger.core.service.cache.identifier;
 
 import static com.google.common.collect.Sets.newHashSet;
 
-import net.ftng.commons.lang.utils.ArrayUtils;
-import net.ftng.commons.lang.utils.JudgeUtils;
+import org.codelogger.utils.ArrayUtils;
+import org.codelogger.utils.JudgeUtils;
 import org.springframework.data.domain.PageRequest;
 import org.springframework.data.domain.Sort.Direction;
 

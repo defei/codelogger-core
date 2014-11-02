@@ -1,6 +1,6 @@
 package org.codelogger.core.utils;
 
-import net.ftng.commons.lang.utils.HttpUtils;
+import org.codelogger.utils.HttpUtils;
 
 import java.util.Map;
 

@@ -1,11 +1,11 @@
 package org.codelogger.core.bean.tuple;
 
-import static net.ftng.commons.lang.utils.PrintUtils.println;
+import static org.codelogger.utils.PrintUtils.println;
 import static org.codelogger.core.bean.tuple.Tuples.newTuple;
 import static org.codelogger.core.bean.tuple.Tuples.newTwoTupleList;
 
-import net.ftng.commons.lang.utils.MathUtils;
-import net.ftng.commons.lang.utils.StringUtils;
+import org.codelogger.utils.MathUtils;
+import org.codelogger.utils.StringUtils;
 import org.junit.Test;
 
 import java.util.List;

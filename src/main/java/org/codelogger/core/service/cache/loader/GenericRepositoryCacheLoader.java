@@ -1,6 +1,6 @@
 package org.codelogger.core.service.cache.loader;
 
-import static net.ftng.commons.lang.utils.CollectionUtils.isNotEmpty;
+import static org.codelogger.utils.CollectionUtils.isNotEmpty;
 
 import com.google.common.cache.CacheLoader;
 import org.codelogger.core.domain.AbstractDomainObject;

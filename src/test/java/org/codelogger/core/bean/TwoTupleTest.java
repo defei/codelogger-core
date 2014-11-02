@@ -1,6 +1,6 @@
 package org.codelogger.core.bean;
 
-import static net.ftng.commons.lang.utils.PrintUtils.println;
+import static org.codelogger.utils.PrintUtils.println;
 
 import org.codelogger.core.bean.tuple.TwoTuple;
 import org.junit.Test;

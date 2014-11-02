@@ -1,7 +1,7 @@
 package org.codelogger.core.service;
 
 import static java.lang.String.format;
-import static net.ftng.commons.lang.utils.JudgeUtils.isNotNull;
+import static org.codelogger.utils.JudgeUtils.isNotNull;
 
 import org.codelogger.core.domain.AbstractDomainObject;
 import org.codelogger.core.exception.ResourcceNotFoundExcception;

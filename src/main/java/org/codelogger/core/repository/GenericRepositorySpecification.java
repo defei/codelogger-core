@@ -2,7 +2,7 @@ package org.codelogger.core.repository;
 
 import static org.springframework.data.jpa.domain.Specifications.where;
 
-import net.ftng.commons.lang.utils.CollectionUtils;
+import org.codelogger.utils.CollectionUtils;
 import org.springframework.data.jpa.domain.Specification;
 import org.springframework.data.jpa.domain.Specifications;
 
