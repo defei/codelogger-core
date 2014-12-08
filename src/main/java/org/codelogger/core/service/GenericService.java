@@ -4,7 +4,7 @@ import static java.lang.String.format;
 import static org.codelogger.utils.JudgeUtils.isNotNull;
 
 import org.codelogger.core.domain.AbstractDomainObject;
-import org.codelogger.core.exception.ResourcceNotFoundExcception;
+import org.codelogger.core.exception.ResourceNotFoundExcception;
 import org.codelogger.core.repository.GenericRepository;
 import org.codelogger.core.service.cache.GenericRepositoryCache;
 import org.springframework.beans.factory.InitializingBean;
@@ -46,11 +46,11 @@ public abstract class GenericService <T extends AbstractDomainObject> implements
     return savedItem;
   }
 
-  public T findById(Long id) throws ResourcceNotFoundExcception {
+  public T findById(Long id) throws ResourceNotFoundExcception {
 
     T data = genericRepositoryCache.findOne(id);
     if (data == null) {
-      throw new ResourcceNotFoundExcception(format("No element found with id:'%s'", id));
+      throw new ResourceNotFoundExcception(format("No element found with id:'%s'", id));
     }
     return data;
   }
