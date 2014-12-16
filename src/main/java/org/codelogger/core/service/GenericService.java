@@ -3,7 +3,10 @@ package org.codelogger.core.service;
 import static java.lang.String.format;
 import static org.codelogger.utils.JudgeUtils.isNotNull;
 
+import java.util.List;
+
 import org.codelogger.core.domain.AbstractDomainObject;
+import org.codelogger.core.exception.MethodUnsupportedException;
 import org.codelogger.core.exception.ResourceNotFoundExcception;
 import org.codelogger.core.repository.GenericRepository;
 import org.codelogger.core.service.cache.GenericRepositoryCache;
@@ -11,9 +14,7 @@ import org.springframework.beans.factory.InitializingBean;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Sort.Direction;
 
-import java.util.List;
-
-public abstract class GenericService <T extends AbstractDomainObject> implements InitializingBean {
+public abstract class GenericService<T extends AbstractDomainObject> implements InitializingBean {
 
   protected GenericRepositoryCache<T> genericRepositoryCache;
 
@@ -23,7 +24,7 @@ public abstract class GenericService <T extends AbstractDomainObject> implements
   public void afterPropertiesSet() throws Exception {
 
     genericRepositoryCache = new GenericRepositoryCache<T>(getRepository(), getCachemaximumSize(),
-        getCacheExpireMinutes());
+      getCacheExpireMinutes());
   }
 
   protected Integer getCachemaximumSize() {
@@ -36,7 +37,7 @@ public abstract class GenericService <T extends AbstractDomainObject> implements
     return 30;
   }
 
-  public T save(T t) {
+  public T save(final T t) {
 
     if (isNotNull(t.getId())) {
       t.setLatestUpdateTime(System.currentTimeMillis());
@@ -46,7 +47,7 @@ public abstract class GenericService <T extends AbstractDomainObject> implements
     return savedItem;
   }
 
-  public T findById(Long id) throws ResourceNotFoundExcception {
+  public T findById(final Long id) throws ResourceNotFoundExcception {
 
     T data = genericRepositoryCache.findOne(id);
     if (data == null) {
@@ -55,7 +56,7 @@ public abstract class GenericService <T extends AbstractDomainObject> implements
     return data;
   }
 
-  public List<T> findByIds(Iterable<Long> ids) {
+  public List<T> findByIds(final Iterable<Long> ids) {
 
     return genericRepositoryCache.findAll(ids);
   }
@@ -65,7 +66,8 @@ public abstract class GenericService <T extends AbstractDomainObject> implements
     return genericRepositoryCache.findAll();
   }
 
-  public Page<T> findAll(Integer page, Integer size, Direction direction, String property) {
+  public Page<T> findAll(final Integer page, final Integer size, final Direction direction,
+    final String property) throws MethodUnsupportedException {
 
     return genericRepositoryCache.findAll(page, size, direction, property);
   }
@@ -75,12 +77,12 @@ public abstract class GenericService <T extends AbstractDomainObject> implements
     return getRepository().count();
   }
 
-  public Boolean exist(Long id) {
+  public Boolean exist(final Long id) {
 
     return getRepository().exists(id);
   }
 
-  public void delete(Long id) {
+  public void delete(final Long id) {
 
     getRepository().delete(id);
     genericRepositoryCache.invalidateAll();
