@@ -47,6 +47,11 @@ public class MarvelDateJudge {
     validateFields();
   }
 
+  public Boolean isValid() {
+
+    return isValid(new Date());
+  }
+
   public Boolean isValid(final Date date) {
 
     validateFields();

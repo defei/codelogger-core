@@ -1,11 +1,8 @@
 package org.codelogger.core.test;
 
-import org.junit.runner.RunWith;
 import org.mockito.Matchers;
 import org.mockito.Mockito;
-import org.mockito.runners.MockitoJUnitRunner;
 
-@RunWith(MockitoJUnitRunner.class)
 public class TestBase {
 
   protected Long defaultId = 1L;
