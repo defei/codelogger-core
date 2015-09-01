@@ -2,12 +2,17 @@ package org.codelogger.core.context;
 
 import static org.codelogger.utils.StringUtils.isNotBlank;
 
-import java.io.IOException;
 import java.io.InputStreamReader;
+import java.lang.reflect.Field;
+import java.lang.reflect.Modifier;
 import java.util.LinkedHashSet;
+import java.util.Map.Entry;
 import java.util.Properties;
 import java.util.Set;
+import java.util.concurrent.ConcurrentHashMap;
 
+import org.codelogger.core.context.stereotype.Autowired;
+import org.codelogger.core.context.stereotype.Service;
 import org.codelogger.utils.StringUtils;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -34,6 +39,7 @@ public class ApplicationContextLoader {
         .getResourceAsStream(contextConfigLocation), UTF_8));
       ClassPath classPath = ClassPath.from(classLoader);
       String valueOfScanPackage = configurations.getProperty(SCAN_PACKAGE);
+      ConcurrentHashMap<Class<?>, Object> typeToBean = new ConcurrentHashMap<Class<?>, Object>();
       if (isNotBlank(valueOfScanPackage)) {
         logger.debug("scan components for packages[{}]", valueOfScanPackage);
         String[] basePackages = valueOfScanPackage.split(INIT_PARAM_DELIMITERS);
@@ -42,14 +48,39 @@ public class ApplicationContextLoader {
           allClassInfo.addAll(classPath.getTopLevelClassesRecursive(basePackage));
         }
         for (ClassInfo classInfo : allClassInfo) {
-          System.out.println(classInfo);
+          Class<?> load = classInfo.load();
+          if (load.isAnnotationPresent(Service.class)) {
+            typeToBean.put(load, load.newInstance());
+          }
+        }
+        for (Entry<Class<?>, Object> classWithInstance : typeToBean.entrySet()) {
+          Class<?> targetClass = classWithInstance.getKey();
+          Object targetInstance = classWithInstance.getValue();
+          for (Field field : targetClass.getDeclaredFields()) {
+            System.out.println("==========set value==========");
+            if (field.isAnnotationPresent(Autowired.class)) {
+              logger.debug("field {}", field.getGenericType());
+              if (Modifier.isFinal(field.getModifiers())) {
+                continue;
+              }
+              field.setAccessible(true);
+              logger.debug("target {}", targetInstance);
+              Object value = typeToBean.get(field.getGenericType());
+              logger.debug("value {}", value);
+              field.set(targetInstance, value);
+            }
+          }
+        }
+        System.out.println("==========final==========");
+        for (Entry<Class<?>, Object> classWithInstance : typeToBean.entrySet()) {
+          logger.debug("{}", classWithInstance);
         }
       }
-
-    } catch (IOException e) {
+      return new ApplicationContext(typeToBean);
+    } catch (Exception e) {
       logger.error("Init application context failed.", e);
+      throw new IllegalArgumentException();
     }
-    return new ApplicationContext();
   }
 
   public ApplicationContextLoader() {
