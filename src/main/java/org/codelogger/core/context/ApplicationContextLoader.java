@@ -66,6 +66,9 @@ public class ApplicationContextLoader {
               field.setAccessible(true);
               logger.debug("target {}", targetInstance);
               Object value = typeToBean.get(field.getGenericType());
+              if (value == null && applicationContext != null) {
+                value = applicationContext.getBean(field.getGenericType());
+              }
               logger.debug("value {}", value);
               field.set(targetInstance, value);
             }
@@ -76,7 +79,7 @@ public class ApplicationContextLoader {
           logger.debug("{}", classWithInstance);
         }
       }
-      return new ApplicationContext(typeToBean);
+      return new ApplicationContext(applicationContext, typeToBean);
     } catch (Exception e) {
       logger.error("Init application context failed.", e);
       throw new IllegalArgumentException();
@@ -88,10 +91,19 @@ public class ApplicationContextLoader {
     classLoader = getClass().getClassLoader();
   }
 
+  public ApplicationContextLoader(final ApplicationContext applicationContext,
+    final ClassLoader classLoader) {
+
+    this.classLoader = classLoader;
+    this.applicationContext = applicationContext;
+  }
+
   private ApplicationContextLoader(final ClassLoader classLoader) {
 
     this.classLoader = classLoader;
   }
+
+  private ApplicationContext applicationContext;
 
   private ClassLoader classLoader;
 

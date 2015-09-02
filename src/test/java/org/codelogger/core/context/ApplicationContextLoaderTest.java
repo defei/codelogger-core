@@ -12,9 +12,14 @@ public class ApplicationContextLoaderTest {
   @Test
   public void initApplicationContext() {
 
-    ApplicationContextLoader applicationContextLoader = new ApplicationContextLoader();
-    ApplicationContext applicationContext = applicationContextLoader
+    ClassLoader classLoader = this.getClass().getClassLoader();
+    ApplicationContextLoader applicationContextLoader = ApplicationContextLoader.from(classLoader);
+    ApplicationContext applicationContextParent = applicationContextLoader
       .initApplicationContext("codelogger.config");
+    ApplicationContextLoader applicationContextLoader2 = new ApplicationContextLoader(
+      applicationContextParent, classLoader);
+    ApplicationContext applicationContext = applicationContextLoader2
+      .initApplicationContext("codelogger1.config");
     TestServiceA testServiceA = applicationContext.getBean(TestServiceA.class);
     TestServiceB testServiceB = applicationContext.getBean(TestServiceB.class);
     assertNotNull(testServiceA);
