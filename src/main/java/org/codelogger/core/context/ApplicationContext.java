@@ -8,11 +8,16 @@ public class ApplicationContext {
   public <T> T getBean(final Type type) {
 
     @SuppressWarnings("unchecked")
-    T object = (T) typeToBean.get(type);
-    if (object == null && parent != null) {
-      object = parent.getBean(type);
+    T bean = (T) typeToBean.get(type);
+    if (bean == null && parent != null) {
+      bean = parent.getBean(type);
     }
-    return object;
+    return bean;
+  }
+
+  protected ApplicationContext(final ApplicationContext applicationContext) {
+
+    typeToBean = applicationContext.typeToBean;
   }
 
   protected ApplicationContext(final ConcurrentHashMap<Class<?>, Object> typeToBean) {
@@ -32,8 +37,8 @@ public class ApplicationContext {
     return parent;
   }
 
-  private ApplicationContext parent;
+  protected final ConcurrentHashMap<Class<?>, Object> typeToBean;
 
-  private final ConcurrentHashMap<Class<?>, Object> typeToBean;
+  private ApplicationContext parent;
 
 }

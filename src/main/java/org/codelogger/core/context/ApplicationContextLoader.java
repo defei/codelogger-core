@@ -1,25 +1,20 @@
 package org.codelogger.core.context;
 
-import static org.codelogger.utils.StringUtils.isNotBlank;
-
 import java.io.InputStreamReader;
-import java.lang.reflect.Field;
-import java.lang.reflect.Modifier;
-import java.util.LinkedHashSet;
+import java.lang.annotation.Annotation;
 import java.util.Map.Entry;
 import java.util.Properties;
-import java.util.Set;
 import java.util.concurrent.ConcurrentHashMap;
 
-import org.codelogger.core.context.stereotype.Autowired;
+import org.codelogger.core.context.bean.ComponentScanner;
+import org.codelogger.core.context.exception.ContextInitException;
+import org.codelogger.core.context.stereotype.Dao;
 import org.codelogger.core.context.stereotype.Service;
 import org.codelogger.utils.StringUtils;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import com.google.common.reflect.ClassPath;
-import com.google.common.reflect.ClassPath.ClassInfo;
-
+@SuppressWarnings("unchecked")
 public class ApplicationContextLoader {
 
   public static ApplicationContextLoader from(final ClassLoader classLoader) {
@@ -27,68 +22,45 @@ public class ApplicationContextLoader {
     return new ApplicationContextLoader(classLoader);
   }
 
-  public ApplicationContext initApplicationContext(final String contextConfigLocation) {
+  public ApplicationContext initApplicationContext(final String contextConfigLocation)
+    throws ContextInitException {
 
-    if (StringUtils.isBlank(contextConfigLocation)) {
-      throw new IllegalArgumentException("Argument contextConfigLocation can not be blank.");
-    }
     try {
-      configurations = new Properties();
-      logger.debug("load application context configurations.");
+      Properties configurations = new Properties();
+      logger.debug("load application context configurations from:'{}'.", contextConfigLocation);
       configurations.load(new InputStreamReader(classLoader
         .getResourceAsStream(contextConfigLocation), UTF_8));
-      ClassPath classPath = ClassPath.from(classLoader);
-      String valueOfScanPackage = configurations.getProperty(SCAN_PACKAGE);
-      ConcurrentHashMap<Class<?>, Object> typeToBean = new ConcurrentHashMap<Class<?>, Object>();
-      if (isNotBlank(valueOfScanPackage)) {
-        logger.debug("scan components for packages[{}]", valueOfScanPackage);
-        String[] basePackages = valueOfScanPackage.split(INIT_PARAM_DELIMITERS);
-        Set<ClassInfo> allClassInfo = new LinkedHashSet<ClassInfo>();
-        for (String basePackage : basePackages) {
-          allClassInfo.addAll(classPath.getTopLevelClassesRecursive(basePackage));
-        }
-        for (ClassInfo classInfo : allClassInfo) {
-          Class<?> load = classInfo.load();
-          if (load.isAnnotationPresent(Service.class)) {
-            typeToBean.put(load, load.newInstance());
-          }
-        }
-        for (Entry<Class<?>, Object> classWithInstance : typeToBean.entrySet()) {
-          Class<?> targetClass = classWithInstance.getKey();
-          Object targetInstance = classWithInstance.getValue();
-          for (Field field : targetClass.getDeclaredFields()) {
-            System.out.println("==========set value==========");
-            if (field.isAnnotationPresent(Autowired.class)) {
-              logger.debug("field {}", field.getGenericType());
-              if (Modifier.isFinal(field.getModifiers())) {
-                continue;
-              }
-              field.setAccessible(true);
-              logger.debug("target {}", targetInstance);
-              Object value = typeToBean.get(field.getGenericType());
-              if (value == null && applicationContext != null) {
-                value = applicationContext.getBean(field.getGenericType());
-              }
-              logger.debug("value {}", value);
-              field.set(targetInstance, value);
-            }
-          }
-        }
-        System.out.println("==========final==========");
-        for (Entry<Class<?>, Object> classWithInstance : typeToBean.entrySet()) {
-          logger.debug("{}", classWithInstance);
+
+      ApplicationContext processedApplicationContext = applicationContext;
+      String dependencies = configurations.getProperty(DEPENDENCY_CONFIG);
+      if (StringUtils.isNotBlank(dependencies)) {
+        String[] dependencyConfigLocations = dependencies.split(INIT_PARAM_DELIMITERS);
+        for (String dependencyConfigLocation : dependencyConfigLocations) {
+          ApplicationContextLoader applicationContextLoader = new ApplicationContextLoader(
+            processedApplicationContext, classLoader, componentScanner.getComponentTypes());
+          processedApplicationContext = applicationContextLoader
+            .initApplicationContext(dependencyConfigLocation);
         }
       }
-      return new ApplicationContext(applicationContext, typeToBean);
+      ConcurrentHashMap<Class<?>, Object> typeToBean = processedApplicationContext == null ? componentScanner
+        .scan(configurations) : componentScanner.scan(configurations,
+        processedApplicationContext.typeToBean);
+      System.out.println("!!!!!");
+      for (Entry<Class<?>, Object> typeAndBean : typeToBean.entrySet()) {
+        System.out.println(typeAndBean.getKey());
+        System.out.println(typeAndBean.getValue());
+      }
+      return new ApplicationContext(processedApplicationContext, typeToBean);
     } catch (Exception e) {
       logger.error("Init application context failed.", e);
-      throw new IllegalArgumentException();
+      throw new ContextInitException(e);
     }
   }
 
   public ApplicationContextLoader() {
 
     classLoader = getClass().getClassLoader();
+    componentScanner = new ComponentScanner(classLoader, null, Service.class, Dao.class);
   }
 
   public ApplicationContextLoader(final ApplicationContext applicationContext,
@@ -96,22 +68,39 @@ public class ApplicationContextLoader {
 
     this.classLoader = classLoader;
     this.applicationContext = applicationContext;
+    componentScanner = new ComponentScanner(classLoader, applicationContext == null ? null
+      : applicationContext.typeToBean, Service.class, Dao.class);
+  }
+
+  public ApplicationContextLoader(final ApplicationContext applicationContext,
+    final ClassLoader classLoader, final Class<? extends Annotation>... componentTypes) {
+
+    this.classLoader = classLoader;
+    this.applicationContext = applicationContext;
+    componentScanner = new ComponentScanner(classLoader, applicationContext == null ? null
+      : applicationContext.typeToBean, componentTypes);
   }
 
   private ApplicationContextLoader(final ClassLoader classLoader) {
 
     this.classLoader = classLoader;
+    componentScanner = new ComponentScanner(classLoader, null, Service.class, Dao.class);
   }
+
+  protected void setComponentScanner(final ComponentScanner componentScanner) {
+
+    this.componentScanner = componentScanner;
+  }
+
+  private ComponentScanner componentScanner;
 
   private ApplicationContext applicationContext;
 
   private ClassLoader classLoader;
 
-  private Properties configurations;
+  public static final String DEPENDENCY_CONFIG = "dependency-config";
 
   private static final String INIT_PARAM_DELIMITERS = "[,; \t\n]";
-
-  private static final String SCAN_PACKAGE = "scan-package";
 
   private static final String UTF_8 = "UTF-8";
 
