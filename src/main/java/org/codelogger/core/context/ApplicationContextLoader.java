@@ -50,7 +50,7 @@ public class ApplicationContextLoader {
         System.out.println(typeAndBean.getKey());
         System.out.println(typeAndBean.getValue());
       }
-      return new ApplicationContext(processedApplicationContext, typeToBean);
+      return new ApplicationContext(processedApplicationContext, typeToBean, configurations);
     } catch (Exception e) {
       logger.error("Init application context failed.", e);
       throw new ContextInitException(e);

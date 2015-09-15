@@ -1,6 +1,7 @@
 package org.codelogger.core.context;
 
 import java.lang.reflect.Type;
+import java.util.Properties;
 import java.util.concurrent.ConcurrentHashMap;
 
 public class ApplicationContext {
@@ -15,20 +16,24 @@ public class ApplicationContext {
     return bean;
   }
 
-  protected ApplicationContext(final ApplicationContext applicationContext) {
+  protected ApplicationContext(final ApplicationContext applicationContext,
+    final Properties configurations) {
 
     typeToBean = applicationContext.typeToBean;
+    this.configurations = configurations;
   }
 
-  protected ApplicationContext(final ConcurrentHashMap<Class<?>, Object> typeToBean) {
+  protected ApplicationContext(final ConcurrentHashMap<Class<?>, Object> typeToBean,
+    final Properties configurations) {
 
     this.typeToBean = typeToBean;
+    this.configurations = configurations;
   }
 
   protected ApplicationContext(final ApplicationContext applicationContext,
-    final ConcurrentHashMap<Class<?>, Object> typeToBean) {
+    final ConcurrentHashMap<Class<?>, Object> typeToBean, final Properties configurations) {
 
-    this(typeToBean);
+    this(typeToBean, configurations);
     parent = applicationContext;
   }
 
@@ -36,6 +41,13 @@ public class ApplicationContext {
 
     return parent;
   }
+
+  public Properties getConfigurations() {
+
+    return configurations;
+  }
+
+  private final Properties configurations;
 
   protected final ConcurrentHashMap<Class<?>, Object> typeToBean;
 
