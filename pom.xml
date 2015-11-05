@@ -33,7 +33,7 @@
 
 	<properties>
 		<project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
-		<codelogger.utils.version>1.0.0</codelogger.utils.version>
+		<codelogger.utils.version>2.0.0-SNAPSHOT</codelogger.utils.version>
 	</properties>
 
 	<dependencies>

@@ -21,21 +21,23 @@ import com.google.common.reflect.ClassPath.ClassInfo;
 
 public class ComponentScanner {
 
-  public ComponentScanner(final ConcurrentHashMap<Class<?>, Object> typeToBean,
-    final Class<? extends Annotation>... componentTypes) {
+  public ComponentScanner(
+    final ConcurrentHashMap<Class<?>, Object> typeToBean,
+    final ConcurrentHashMap<Class<? extends Annotation>, DefaultConstructFactory> componentTypeToConstructFactory) {
 
     this.typeToBean = typeToBean == null ? new ConcurrentHashMap<Class<?>, Object>() : typeToBean;
-    this.componentTypes = componentTypes;
+    this.componentTypeToConstructFactory = componentTypeToConstructFactory;
     classLoader = getClass().getClassLoader();
   }
 
-  public ComponentScanner(final ClassLoader classLoader,
+  public ComponentScanner(
+    final ClassLoader classLoader,
     final ConcurrentHashMap<Class<?>, Object> typeToBean,
-    final Class<? extends Annotation>... componentTypes) {
+    final ConcurrentHashMap<Class<? extends Annotation>, DefaultConstructFactory> componentTypeToConstructFactory) {
 
     this.classLoader = classLoader;
     this.typeToBean = typeToBean == null ? new ConcurrentHashMap<Class<?>, Object>() : typeToBean;
-    this.componentTypes = componentTypes;
+    this.componentTypeToConstructFactory = componentTypeToConstructFactory;
   }
 
   public ConcurrentHashMap<Class<?>, Object> scan(final Properties configurations,
@@ -62,9 +64,10 @@ public class ComponentScanner {
         }
         for (ClassInfo classInfo : allClassInfo) {
           Class<?> load = classInfo.load();
-          for (Class<? extends Annotation> componentType : componentTypes) {
-            if (load.isAnnotationPresent(componentType)) {
-              typeToBean.put(load, load.newInstance());
+          for (Entry<Class<? extends Annotation>, DefaultConstructFactory> componentTypeWithConstructFactory : componentTypeToConstructFactory
+            .entrySet()) {
+            if (load.isAnnotationPresent(componentTypeWithConstructFactory.getKey())) {
+              typeToBean.put(load, componentTypeWithConstructFactory.getValue().newInstance(load));
             }
           }
         }
@@ -73,7 +76,6 @@ public class ComponentScanner {
           Object targetInstance = classWithInstance.getValue();
           for (Field field : targetClass.getDeclaredFields()) {
             if (field.isAnnotationPresent(Autowired.class)) {
-              System.out.println("==========set value==========");
               logger.debug("field {}", field.getGenericType());
               if (Modifier.isFinal(field.getModifiers())) {
                 continue;
@@ -94,16 +96,16 @@ public class ComponentScanner {
     }
   }
 
-  public Class<? extends Annotation>[] getComponentTypes() {
+  public ConcurrentHashMap<Class<? extends Annotation>, DefaultConstructFactory> getComponentTypeToConstructFactory() {
 
-    return componentTypes;
+    return componentTypeToConstructFactory;
   }
 
   private final ClassLoader classLoader;
 
   private final ConcurrentHashMap<Class<?>, Object> typeToBean;
 
-  private final Class<? extends Annotation>[] componentTypes;
+  private final ConcurrentHashMap<Class<? extends Annotation>, DefaultConstructFactory> componentTypeToConstructFactory;
 
   private static final String INIT_PARAM_DELIMITERS = "[,; \t\n]";
 
