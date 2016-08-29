@@ -4,7 +4,9 @@ import static org.codelogger.utils.StringUtils.isNotBlank;
 
 import java.lang.annotation.Annotation;
 import java.lang.reflect.Field;
+import java.lang.reflect.Method;
 import java.lang.reflect.Modifier;
+import java.lang.reflect.Type;
 import java.util.LinkedHashSet;
 import java.util.Map.Entry;
 import java.util.Properties;
@@ -12,7 +14,10 @@ import java.util.Set;
 import java.util.concurrent.ConcurrentHashMap;
 
 import org.codelogger.core.context.stereotype.Autowired;
+import org.codelogger.core.context.stereotype.PostConstruct;
+import org.codelogger.core.context.stereotype.Value;
 import org.codelogger.utils.MapUtils;
+import org.codelogger.utils.ValueUtils;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -47,6 +52,7 @@ public class ComponentScanner {
     return scan(configurations);
   }
 
+  @SuppressWarnings({ "unchecked", "rawtypes" })
   public ConcurrentHashMap<Class<?>, Object> scan(final Properties configurations) {
 
     if (MapUtils.isEmpty(configurations)) {
@@ -85,6 +91,50 @@ public class ComponentScanner {
               Object value = typeToBean.get(field.getGenericType());
               logger.debug("value {}", value);
               field.set(targetInstance, value);
+            }
+            Value valueAnnotation = field.getAnnotation(Value.class);
+            if (valueAnnotation != null) {
+              logger.debug("field {}", field.getGenericType());
+              if (Modifier.isFinal(field.getModifiers())) {
+                continue;
+              }
+              field.setAccessible(true);
+              Type genericType = field.getGenericType();
+              Object value = configurations.getProperty(valueAnnotation.value()
+                .replaceAll("[$#]+\\{", "").replaceAll("\\}", ""));
+              if (value != null) {
+                try {
+                  String valueOfString = value.toString();
+                  if (genericType == Integer.class || genericType == int.class) {
+                    value = Integer.valueOf(valueOfString);
+                  } else if (genericType == Long.class || genericType == long.class) {
+                    value = Long.valueOf(valueOfString);
+                  } else if (genericType == String.class) {
+                    value = valueOfString;
+                  } else if (genericType == Boolean.class || genericType == boolean.class) {
+                    value = Boolean.valueOf(valueOfString);
+                  } else if (genericType == Byte.class || genericType == byte.class) {
+                    value = Byte.valueOf(valueOfString);
+                  } else if (genericType == Short.class || genericType == short.class) {
+                    value = Short.valueOf(valueOfString);
+                  } else if (((Class) genericType).isEnum()) {
+                    value = ValueUtils.getEnumInstance((Class) genericType, valueOfString);
+                  }
+                  if (value != null) {
+                    field.set(targetInstance, value);
+                  }
+                } catch (IllegalAccessException e) {
+                  logger.warn("Can not set {} to {}.{}", value,
+                    targetInstance.getClass().getName(), field.getName(), e);
+                }
+              }
+            }
+          }
+          for (Method method : targetClass.getDeclaredMethods()) {
+            PostConstruct postConstruct = method.getAnnotation(PostConstruct.class);
+            if (postConstruct != null) {
+              method.setAccessible(true);
+              method.invoke(targetInstance);
             }
           }
         }

@@ -31,7 +31,12 @@ public class PropertiesLoader {
 
   public static String getProperty(final String key) {
 
-    return properties.getProperty(key);
+    if (key == null) {
+      return null;
+    } else {
+      String value = properties.getProperty(key);
+      return value == null ? System.getProperty(key) : value;
+    }
   }
 
   private static final Properties properties = new Properties();
