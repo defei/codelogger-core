@@ -8,6 +8,10 @@ public class Pageable {
 
   public Integer pageSize = 10;
 
+  public Direction direction;
+
+  public String[] fields;
+
   public Pageable() {
 
   }
@@ -18,9 +22,12 @@ public class Pageable {
     this.pageSize = pageSize;
   }
 
-  public Pageable(final Integer fixedPage, final Integer countPerPage, final Direction desc,
+  public Pageable(final Integer page, final Integer pageSize, final Direction direction,
     final String... fields) {
 
+    this(page, pageSize);
+    this.direction = direction;
+    this.fields = fields;
   }
 
 }
