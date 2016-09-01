@@ -1,5 +1,6 @@
 package org.codelogger.core.context.bean;
 
+import static com.google.common.collect.Lists.newArrayList;
 import static org.codelogger.utils.StringUtils.isNotBlank;
 
 import java.lang.annotation.Annotation;
@@ -8,6 +9,7 @@ import java.lang.reflect.Method;
 import java.lang.reflect.Modifier;
 import java.lang.reflect.Type;
 import java.util.LinkedHashSet;
+import java.util.List;
 import java.util.Map.Entry;
 import java.util.Properties;
 import java.util.Set;
@@ -16,6 +18,7 @@ import java.util.concurrent.ConcurrentHashMap;
 import org.codelogger.core.context.stereotype.Autowired;
 import org.codelogger.core.context.stereotype.PostConstruct;
 import org.codelogger.core.context.stereotype.Value;
+import org.codelogger.utils.ArrayUtils;
 import org.codelogger.utils.MapUtils;
 import org.codelogger.utils.ValueUtils;
 import org.slf4j.Logger;
@@ -80,7 +83,7 @@ public class ComponentScanner {
         for (Entry<Class<?>, Object> classWithInstance : typeToBean.entrySet()) {
           Class<?> targetClass = classWithInstance.getKey();
           Object targetInstance = classWithInstance.getValue();
-          for (Field field : targetClass.getDeclaredFields()) {
+          for (Field field : getDeclaredFieldsIncludeParent(targetClass)) {
             if (field.isAnnotationPresent(Autowired.class)) {
               logger.debug("field {}", field.getGenericType());
               if (Modifier.isFinal(field.getModifiers())) {
@@ -144,6 +147,22 @@ public class ComponentScanner {
       logger.error("Init application context failed.", e);
       throw new IllegalArgumentException();
     }
+  }
+
+  private List<Field> getDeclaredFieldsIncludeParent(final Class<?> componentClass) {
+
+    List<Field> fields = newArrayList();
+    Class<?> superclass = componentClass;
+    while (superclass != null) {
+      Field[] declaredFields = superclass.getDeclaredFields();
+      if (ArrayUtils.isNotEmpty(declaredFields)) {
+        for (Field field : declaredFields) {
+          fields.add(field);
+        }
+      }
+      superclass = superclass.getSuperclass();
+    }
+    return fields;
   }
 
   public ConcurrentHashMap<Class<? extends Annotation>, DefaultConstructFactory> getComponentTypeToConstructFactory() {
